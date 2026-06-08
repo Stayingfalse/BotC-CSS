@@ -287,6 +287,22 @@ export default function App() {
                   unit="px"
                   onChange={v => update('fs', Number(v))}
                 />
+
+                <h2 className={styles.sectionTitle} style={{ marginTop: '1.25rem' }}>Text Style</h2>
+                <ToggleControl
+                  label="Uppercase character names"
+                  checked={settings.tt}
+                  onChange={v => update('tt', v)}
+                />
+                <RangeControl
+                  label="Letter spacing"
+                  value={settings.ls}
+                  min={0}
+                  max={4}
+                  step={0.1}
+                  unit="px"
+                  onChange={v => update('ls', Number(v))}
+                />
               </section>
             )}
 
@@ -302,6 +318,37 @@ export default function App() {
                   unit="px"
                   onChange={v => update('w', Number(v))}
                 />
+
+                <h2 className={styles.sectionTitle} style={{ marginTop: '1.25rem' }}>Sidebar Padding</h2>
+                <RangeControl
+                  label="Top padding"
+                  value={settings.pt}
+                  min={0}
+                  max={80}
+                  step={5}
+                  unit="px"
+                  onChange={v => update('pt', Number(v))}
+                />
+                <RangeControl
+                  label="Left inset"
+                  value={settings.pl}
+                  min={0}
+                  max={60}
+                  step={5}
+                  unit="px"
+                  onChange={v => update('pl', Number(v))}
+                />
+
+                <h2 className={styles.sectionTitle} style={{ marginTop: '1.25rem' }}>Border / Divider</h2>
+                <RangeControl
+                  label="Thickness"
+                  value={settings.bw}
+                  min={0}
+                  max={8}
+                  step={1}
+                  unit="px"
+                  onChange={v => update('bw', Number(v))}
+                />
               </section>
             )}
 
@@ -315,6 +362,26 @@ export default function App() {
                   label="Show torn-edge mask"
                   checked={settings.m}
                   onChange={v => update('m', v)}
+                />
+
+                <h2 className={styles.sectionTitle} style={{ marginTop: '1.25rem' }}>Background Artwork</h2>
+                <RangeControl
+                  label="Token icon opacity"
+                  value={settings.io}
+                  min={0}
+                  max={100}
+                  step={5}
+                  unit="%"
+                  onChange={v => update('io', Number(v))}
+                />
+                <RangeControl
+                  label="Token icon size"
+                  value={settings.is}
+                  min={120}
+                  max={260}
+                  step={10}
+                  unit="px"
+                  onChange={v => update('is', Number(v))}
                 />
               </section>
             )}

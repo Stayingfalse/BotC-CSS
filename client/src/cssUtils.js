@@ -16,8 +16,15 @@ export const DEFAULTS = {
   tc:  '#000000',
   ff:  '',
   fs:  14,
+  tt:  true,
+  ls:  0,
   m:   true,
+  io:  50,
+  is:  200,
   w:   270,
+  pt:  40,
+  pl:  30,
+  bw:  3,
 };
 
 export const BACKGROUND_PRESETS = [
@@ -41,6 +48,26 @@ export const BACKGROUND_PRESETS = [
     label: 'Twilight',
     css: 'linear-gradient(135deg, #332f63 0%, #6c3f93 50%, #f18f88 100%)',
   },
+  {
+    id: 'moonlit',
+    label: 'Moonlit',
+    css: 'linear-gradient(135deg, #0f172a 0%, #1d4ed8 45%, #bfdbfe 100%)',
+  },
+  {
+    id: 'evergreen',
+    label: 'Evergreen',
+    css: 'linear-gradient(135deg, #14332a 0%, #2f6f56 55%, #b7d6b0 100%)',
+  },
+  {
+    id: 'emberglow',
+    label: 'Emberglow',
+    css: 'linear-gradient(135deg, #361500 0%, #8f250c 50%, #ffb347 100%)',
+  },
+  {
+    id: 'velvet',
+    label: 'Velvet',
+    css: 'linear-gradient(135deg, #240046 0%, #5a189a 55%, #ff99c8 100%)',
+  },
 ];
 
 const PRESET_LOOKUP = Object.fromEntries(BACKGROUND_PRESETS.map(preset => [preset.id, preset.css]));
@@ -48,6 +75,24 @@ const PRESET_LOOKUP = Object.fromEntries(BACKGROUND_PRESETS.map(preset => [prese
 function pickHexColor(value, fallback) {
   const normalised = String(value ?? '').trim();
   return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(normalised) ? normalised : fallback;
+}
+
+function pickNumber(value, fallback, min, max) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(max, Math.max(min, parsed));
+}
+
+function pickBoolean(value, fallback) {
+  if (value === true || value === 'true') return true;
+  if (value === false || value === 'false') return false;
+  return fallback;
+}
+
+function pickFontFamily(value, fallback) {
+  const normalised = String(value ?? '').trim();
+  if (!normalised) return '';
+  return /^[a-zA-Z0-9\s'",-]+$/.test(normalised) ? normalised : fallback;
 }
 
 export function resolveBackgroundStyle(settings) {
@@ -97,18 +142,37 @@ export function buildCSS(settings) {
     tc  = '#000000',
     ff  = '',
     fs  = 14,
-    m   = true,
-    w   = 270,
+   tt  = true,
+   ls  = 0,
+   m   = true,
+   io  = 50,
+   is  = 200,
+   w   = 270,
+   pt  = 40,
+   pl  = 30,
+   bw  = 3,
   } = settings;
   const background = resolveBackgroundStyle({ bg1, bg2, bg3, bm, bs, bp });
   const borderColor = pickHexColor(bc, DEFAULTS.bc);
   const textColor = pickHexColor(tc, DEFAULTS.tc);
+  const fontFamily = pickFontFamily(ff, DEFAULTS.ff);
+  const fontFamilyRule = fontFamily ? `font-family: ${fontFamily} !important;` : '';
+  const fontSize = pickNumber(fs, DEFAULTS.fs, 10, 22);
+  const letterSpacing = pickNumber(ls, DEFAULTS.ls, 0, 4);
+  const useUppercase = pickBoolean(tt, DEFAULTS.tt);
+  const showMask = pickBoolean(m, DEFAULTS.m);
+  const iconOpacity = pickNumber(io, DEFAULTS.io, 0, 100) / 100;
+  const iconSize = pickNumber(is, DEFAULTS.is, 120, 260);
+  const sidebarWidth = pickNumber(w, DEFAULTS.w, 200, 400);
+  const topPadding = pickNumber(pt, DEFAULTS.pt, 0, 80);
+  const leftPadding = pickNumber(pl, DEFAULTS.pl, 0, 60);
+  const borderWidth = pickNumber(bw, DEFAULTS.bw, 0, 8);
+  const dividerThickness = borderWidth === 0 ? 0 : Math.max(1, Math.round(borderWidth));
+  const hoverIconOpacity = iconOpacity === 0 ? 0 : Math.max(0.08, Math.min(0.4, iconOpacity * 0.45));
 
-  const fontFamilyRule = ff ? `font-family: ${ff} !important;` : '';
-
-  const clipPath = m
-    ? `clip-path: polygon(0% 0%, 1% 0.5%, 2% 1%, 2.5% 1.2%, 3% 1.5%, 3.5% 2%, 4% 2.5%, 3.5% 3%, 4% 3.5%, 4.5% 4%, 5% 4.5%, 5.5% 5%, 6% 5.5%, 5.5% 6%, 6% 6.5%, 6.5% 7%, 7% 7.5%, 7.5% 8%, 7% 8.5%, 7.5% 9%, 6.5% 9.5%, 7% 10%, 7.5% 10.5%, 8% 11%, 7.5% 12%, 7% 12.5%, 7.5% 13%, 8% 14%, 8.5% 15%, 9% 16%, 8.5% 17%, 8% 18%, 8.5% 19%, 9% 20%, 9.5% 21%, 10% 23%, 9.5% 25%, 9% 27%, 9.5% 29%, 10% 30%, 10.5% 31%, 11% 32%, 10.5% 35%, 10% 37%, 10.5% 39%, 11% 40%, 11.5% 41%, 12% 42%, 11.5% 45%, 11% 47%, 11.5% 49%, 10.5% 50%, 10% 52%, 9.5% 54%, 9% 57%, 9.5% 59%, 8.5% 60%, 8% 62%, 7.5% 64%, 7% 67%, 7.5% 69%, 6.5% 70%, 6% 72%, 5.5% 74%, 5% 77%, 5.5% 79%, 4.5% 80%, 4% 82%, 3.5% 84%, 3% 87%, 3.5% 89%, 2.5% 90%, 2% 92%, 1.5% 94%, 1% 96%, 0.5% 98%, 0% 100%, 100% 100%, 100% 0%) !important;`
-    : '';
+  const clipPath = showMask
+   ? `clip-path: polygon(0% 0%, 1% 0.5%, 2% 1%, 2.5% 1.2%, 3% 1.5%, 3.5% 2%, 4% 2.5%, 3.5% 3%, 4% 3.5%, 4.5% 4%, 5% 4.5%, 5.5% 5%, 6% 5.5%, 5.5% 6%, 6% 6.5%, 6.5% 7%, 7% 7.5%, 7.5% 8%, 7% 8.5%, 7.5% 9%, 6.5% 9.5%, 7% 10%, 7.5% 10.5%, 8% 11%, 7.5% 12%, 7% 12.5%, 7.5% 13%, 8% 14%, 8.5% 15%, 9% 16%, 8.5% 17%, 8% 18%, 8.5% 19%, 9% 20%, 9.5% 21%, 10% 23%, 9.5% 25%, 9% 27%, 9.5% 29%, 10% 30%, 10.5% 31%, 11% 32%, 10.5% 35%, 10% 37%, 10.5% 39%, 11% 40%, 11.5% 41%, 12% 42%, 11.5% 45%, 11% 47%, 11.5% 49%, 10.5% 50%, 10% 52%, 9.5% 54%, 9% 57%, 9.5% 59%, 8.5% 60%, 8% 62%, 7.5% 64%, 7% 67%, 7.5% 69%, 6.5% 70%, 6% 72%, 5.5% 74%, 5% 77%, 5.5% 79%, 4.5% 80%, 4% 82%, 3.5% 84%, 3% 87%, 3.5% 89%, 2.5% 90%, 2% 92%, 1.5% 94%, 1% 96%, 0.5% 98%, 0% 100%, 100% 100%, 100% 0%) !important;`
+   : '';
 
   return `/* ============================================================
  * BotC-CSS — Stations Docked Right (Large Token Display)
@@ -120,12 +184,12 @@ aside.character.tab:not(.character-open):not(.positioned) {
   top: 0 !important;
   right: 0 !important;
   bottom: 0 !important;
-  width: ${w}px !important;
+  width: ${sidebarWidth}px !important;
   min-height: 100vh !important;
   max-height: 100vh !important;
   display: flex !important;
   flex-direction: column !important;
-  padding: 40px 0 0 30px !important;
+  padding: ${topPadding}px 0 0 ${leftPadding}px !important;
   margin: 0 !important;
   overflow: visible !important;
   box-sizing: border-box !important;
@@ -140,7 +204,7 @@ aside.character.tab:not(.character-open):not(.positioned) {
     right: 0 !important;
     bottom: 0 !important;
     background: ${background} !important;
-    border-left: 3px solid ${borderColor} !important;
+    border-left: ${borderWidth}px solid ${borderColor} !important;
     box-shadow: -4px 0 10px rgba(0, 0, 0, 0.3) !important;
     z-index: -1 !important;
     ${clipPath}
@@ -178,8 +242,8 @@ aside.character.tab:not(.character-open):not(.positioned) {
       content: "" !important;
       display: block !important;
       width: 90% !important;
-      height: 2px !important;
-      min-height: 2px !important;
+      height: ${dividerThickness}px !important;
+      min-height: ${dividerThickness}px !important;
       margin: 8px auto !important;
       background: linear-gradient(to right, transparent, ${borderColor} 20%, ${borderColor} 80%, transparent) !important;
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
@@ -210,14 +274,14 @@ aside.character.tab:not(.character-open):not(.positioned) {
   .icon {
     display: inline-block !important;
     position: absolute !important;
-    width: 200px !important;
+    width: ${iconSize}px !important;
     height: 95% !important;
     right: 0 !important;
     bottom: 50% !important;
     background-position: 110% center !important;
     background-size: 100% !important;
     background-repeat: no-repeat !important;
-    opacity: 0.5 !important;
+    opacity: ${iconOpacity} !important;
     pointer-events: none !important;
     z-index: 0 !important;
     overflow: visible !important;
@@ -243,10 +307,11 @@ aside.character.tab:not(.character-open):not(.positioned) {
     display: block !important;
     width: 100% !important;
     text-align: left !important;
-    font-size: ${fs}px !important;
+    font-size: ${fontSize}px !important;
     color: ${textColor} !important;
     font-weight: bold !important;
-    text-transform: uppercase !important;
+    text-transform: ${useUppercase ? 'uppercase' : 'none'} !important;
+    letter-spacing: ${letterSpacing}px !important;
     text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8) !important;
     ${fontFamilyRule}
     transition: color 0.3s ease, text-shadow 0.3s ease !important;
@@ -293,7 +358,7 @@ aside.character.tab:not(.character-open):not(.positioned) {
     }
 
     .icon {
-      opacity: 0.2 !important;
+      opacity: ${hoverIconOpacity} !important;
       top: 60% !important;
       bottom: auto !important;
       transform: translateY(-50%) !important;
@@ -360,7 +425,7 @@ aside.character.tab:not(.character-open):not(.positioned) {
         min-height: auto !important;
 
         .icon {
-          opacity: 0.05 !important;
+          opacity: ${iconOpacity === 0 ? 0 : Math.max(0.03, Math.min(0.12, iconOpacity * 0.25))} !important;
           top: 50% !important;
           bottom: auto !important;
           transform: translateY(-50%) !important;

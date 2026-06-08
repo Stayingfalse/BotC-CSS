@@ -13,8 +13,15 @@ const DEFAULTS = {
   tc: '#000000',
   ff: '',
   fs: 14,
+  tt: true,
+  ls: 0,
   m: true,
+  io: 50,
+  is: 200,
   w: 270,
+  pt: 40,
+  pl: 30,
+  bw: 3,
 };
 
 function encodeSettings(settings) {
