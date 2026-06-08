@@ -5,6 +5,9 @@
  *   bg1  {string}  Gradient start colour  (default #f4e8d0)
  *   bg2  {string}  Gradient mid colour    (default #e8dcc8)
  *   bg3  {string}  Gradient end colour    (default #f4e8d0)
+ *   bm   {string}  Background mode: single | gradient | preset
+ *   bs   {string}  Single background colour
+ *   bp   {string}  Preset background id
  *   bc   {string}  Border / divider colour (default #8b6f47)
  *   tc   {string}  Name text colour        (default #000000)
  *   ff   {string}  Font-family             (default '')
@@ -13,11 +16,54 @@
  *   w    {number}  Sidebar width (px)      (default 270)
  *   preview {boolean} Replace fixed with relative for iframe preview
  */
+const DEFAULTS = {
+  bg1: '#f4e8d0',
+  bg2: '#e8dcc8',
+  bg3: '#f4e8d0',
+  bm: 'gradient',
+  bs: '#f4e8d0',
+  bp: 'parchment',
+  bc: '#8b6f47',
+  tc: '#000000',
+};
+
+const BACKGROUND_PRESETS = {
+  rainbow6: 'linear-gradient(135deg, #ff0000 0%, #ff7f00 20%, #ffff00 40%, #00ff00 60%, #0000ff 80%, #8b00ff 100%)',
+  pastelRainbow6: 'linear-gradient(135deg, #ffadad 0%, #ffd6a5 20%, #fdffb6 40%, #caffbf 60%, #a0c4ff 80%, #bdb2ff 100%)',
+  parchment: 'linear-gradient(135deg, #f4e8d0 0%, #e8dcc8 55%, #d9c8ab 100%)',
+  twilight: 'linear-gradient(135deg, #332f63 0%, #6c3f93 50%, #f18f88 100%)',
+};
+
+function pickHexColor(value, fallback) {
+  const normalised = String(value ?? '').trim();
+  return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(normalised) ? normalised : fallback;
+}
+
+function resolveBackgroundStyle(settings) {
+  const mode = settings.bm ?? DEFAULTS.bm;
+
+  if (mode === 'single') {
+    return pickHexColor(settings.bs, DEFAULTS.bs);
+  }
+
+  if (mode === 'preset') {
+    return BACKGROUND_PRESETS[settings.bp] ?? BACKGROUND_PRESETS[DEFAULTS.bp];
+  }
+
+  const start = pickHexColor(settings.bg1, DEFAULTS.bg1);
+  const middle = pickHexColor(settings.bg2, DEFAULTS.bg2);
+  const end = pickHexColor(settings.bg3, DEFAULTS.bg3);
+  return `linear-gradient(135deg, ${start} 0%, ${middle} 50%, ${end} 100%)`;
+}
+
 function generateCSS(settings) {
   const {
     bg1 = '#f4e8d0',
     bg2 = '#e8dcc8',
     bg3 = '#f4e8d0',
+    bm  = 'gradient',
+    bs  = '#f4e8d0',
+    bp  = 'parchment',
     bc  = '#8b6f47',
     tc  = '#000000',
     ff  = '',
@@ -26,6 +72,9 @@ function generateCSS(settings) {
     w   = 270,
     preview = false,
   } = settings;
+  const background = resolveBackgroundStyle({ bg1, bg2, bg3, bm, bs, bp });
+  const borderColor = pickHexColor(bc, DEFAULTS.bc);
+  const textColor = pickHexColor(tc, DEFAULTS.tc);
 
   const fontFamilyRule = ff ? `font-family: ${ff} !important;` : '';
   const positionRule   = preview ? 'position: relative !important;' : 'position: fixed !important;';
@@ -56,7 +105,7 @@ ${heightRules}
   overflow: visible !important;
   box-sizing: border-box !important;
 
-  footer, .jinxes { display: none !important; }
+  footer { display: none !important; }
 
   &::before {
     content: '' !important;
@@ -65,8 +114,8 @@ ${heightRules}
     left: 0 !important;
     right: 0 !important;
     bottom: 0 !important;
-    background: linear-gradient(135deg, ${bg1} 0%, ${bg2} 50%, ${bg3} 100%) !important;
-    border-left: 3px solid ${bc} !important;
+    background: ${background} !important;
+    border-left: 3px solid ${borderColor} !important;
     box-shadow: -4px 0 10px rgba(0, 0, 0, 0.3) !important;
     z-index: -1 !important;
     ${clipPath}
@@ -107,7 +156,7 @@ ${heightRules}
       height: 2px !important;
       min-height: 2px !important;
       margin: 8px auto !important;
-      background: linear-gradient(to right, transparent, ${bc} 20%, ${bc} 80%, transparent) !important;
+      background: linear-gradient(to right, transparent, ${borderColor} 20%, ${borderColor} 80%, transparent) !important;
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
     }
 
@@ -170,7 +219,7 @@ ${heightRules}
     width: 100% !important;
     text-align: left !important;
     font-size: ${fs}px !important;
-    color: ${tc} !important;
+    color: ${textColor} !important;
     font-weight: bold !important;
     text-transform: uppercase !important;
     text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8) !important;

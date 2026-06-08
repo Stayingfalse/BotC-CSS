@@ -9,6 +9,9 @@ export const DEFAULTS = {
   bg1: '#f4e8d0',
   bg2: '#e8dcc8',
   bg3: '#f4e8d0',
+  bm:  'gradient',
+  bs:  '#f4e8d0',
+  bp:  'parchment',
   bc:  '#8b6f47',
   tc:  '#000000',
   ff:  '',
@@ -16,6 +19,53 @@ export const DEFAULTS = {
   m:   true,
   w:   270,
 };
+
+export const BACKGROUND_PRESETS = [
+  {
+    id: 'rainbow6',
+    label: '6-point Rainbow',
+    css: 'linear-gradient(135deg, #ff0000 0%, #ff7f00 20%, #ffff00 40%, #00ff00 60%, #0000ff 80%, #8b00ff 100%)',
+  },
+  {
+    id: 'pastelRainbow6',
+    label: '6-point Pastel Rainbow',
+    css: 'linear-gradient(135deg, #ffadad 0%, #ffd6a5 20%, #fdffb6 40%, #caffbf 60%, #a0c4ff 80%, #bdb2ff 100%)',
+  },
+  {
+    id: 'parchment',
+    label: 'Parchment Style',
+    css: 'linear-gradient(135deg, #f4e8d0 0%, #e8dcc8 55%, #d9c8ab 100%)',
+  },
+  {
+    id: 'twilight',
+    label: 'Twilight',
+    css: 'linear-gradient(135deg, #332f63 0%, #6c3f93 50%, #f18f88 100%)',
+  },
+];
+
+const PRESET_LOOKUP = Object.fromEntries(BACKGROUND_PRESETS.map(preset => [preset.id, preset.css]));
+
+function pickHexColor(value, fallback) {
+  const normalised = String(value ?? '').trim();
+  return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(normalised) ? normalised : fallback;
+}
+
+export function resolveBackgroundStyle(settings) {
+  const mode = settings.bm ?? DEFAULTS.bm;
+
+  if (mode === 'single') {
+    return pickHexColor(settings.bs, DEFAULTS.bs);
+  }
+
+  if (mode === 'preset') {
+    return PRESET_LOOKUP[settings.bp] ?? PRESET_LOOKUP[DEFAULTS.bp];
+  }
+
+  const start  = pickHexColor(settings.bg1, DEFAULTS.bg1);
+  const middle = pickHexColor(settings.bg2, DEFAULTS.bg2);
+  const end    = pickHexColor(settings.bg3, DEFAULTS.bg3);
+  return `linear-gradient(135deg, ${start} 0%, ${middle} 50%, ${end} 100%)`;
+}
 
 // ── Hash encoding ────────────────────────────────────────────────────────────
 export function buildHash(settings) {
@@ -40,6 +90,9 @@ export function buildCSS(settings) {
     bg1 = '#f4e8d0',
     bg2 = '#e8dcc8',
     bg3 = '#f4e8d0',
+    bm  = 'gradient',
+    bs  = '#f4e8d0',
+    bp  = 'parchment',
     bc  = '#8b6f47',
     tc  = '#000000',
     ff  = '',
@@ -47,6 +100,9 @@ export function buildCSS(settings) {
     m   = true,
     w   = 270,
   } = settings;
+  const background = resolveBackgroundStyle({ bg1, bg2, bg3, bm, bs, bp });
+  const borderColor = pickHexColor(bc, DEFAULTS.bc);
+  const textColor = pickHexColor(tc, DEFAULTS.tc);
 
   const fontFamilyRule = ff ? `font-family: ${ff} !important;` : '';
 
@@ -74,7 +130,7 @@ aside.character.tab:not(.character-open):not(.positioned) {
   overflow: visible !important;
   box-sizing: border-box !important;
 
-  footer, .jinxes { display: none !important; }
+  footer { display: none !important; }
 
   &::before {
     content: '' !important;
@@ -83,8 +139,8 @@ aside.character.tab:not(.character-open):not(.positioned) {
     left: 0 !important;
     right: 0 !important;
     bottom: 0 !important;
-    background: linear-gradient(135deg, ${bg1} 0%, ${bg2} 50%, ${bg3} 100%) !important;
-    border-left: 3px solid ${bc} !important;
+    background: ${background} !important;
+    border-left: 3px solid ${borderColor} !important;
     box-shadow: -4px 0 10px rgba(0, 0, 0, 0.3) !important;
     z-index: -1 !important;
     ${clipPath}
@@ -125,7 +181,7 @@ aside.character.tab:not(.character-open):not(.positioned) {
       height: 2px !important;
       min-height: 2px !important;
       margin: 8px auto !important;
-      background: linear-gradient(to right, transparent, ${bc} 20%, ${bc} 80%, transparent) !important;
+      background: linear-gradient(to right, transparent, ${borderColor} 20%, ${borderColor} 80%, transparent) !important;
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
     }
 
@@ -188,7 +244,7 @@ aside.character.tab:not(.character-open):not(.positioned) {
     width: 100% !important;
     text-align: left !important;
     font-size: ${fs}px !important;
-    color: ${tc} !important;
+    color: ${textColor} !important;
     font-weight: bold !important;
     text-transform: uppercase !important;
     text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8) !important;
