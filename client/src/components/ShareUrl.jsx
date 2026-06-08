@@ -1,10 +1,12 @@
 import { useState, useMemo, useCallback } from 'react';
-import { buildCSS, buildHash } from '../cssUtils';
+import { buildCSS, buildHash, parseSettingsInput } from '../cssUtils';
 import styles from './ShareUrl.module.css';
 
-export default function ShareUrl({ settings }) {
+export default function ShareUrl({ settings, onLoadSettings }) {
   const [activeView, setActiveView] = useState('import');
   const [copiedKey, setCopiedKey]   = useState(null);
+  const [loadInput, setLoadInput] = useState('');
+  const [loadStatus, setLoadStatus] = useState('');
 
   const hash      = useMemo(() => buildHash(settings), [settings]);
   const css       = useMemo(() => buildCSS(settings), [settings]);
@@ -22,6 +24,16 @@ export default function ShareUrl({ settings }) {
       // Clipboard API unavailable (e.g. non-secure context) — do nothing
     }
   }, []);
+
+  const loadSettingsFromInput = useCallback(() => {
+    const parsed = parseSettingsInput(loadInput);
+    if (!parsed || !onLoadSettings) {
+      setLoadStatus('Could not read settings from that value.');
+      return;
+    }
+    onLoadSettings(parsed);
+    setLoadStatus('Settings loaded.');
+  }, [loadInput, onLoadSettings]);
 
   return (
     <div className={styles.wrapper}>
@@ -67,6 +79,40 @@ export default function ShareUrl({ settings }) {
               {copiedKey === 'hash' ? '✓' : 'Copy'}
             </button>
           </p>
+
+          <div className={styles.loadRow}>
+            <input
+              type="text"
+              className={styles.loadInput}
+              value={loadInput}
+              placeholder="Paste hash, @import line, or /css URL"
+              onChange={(event) => {
+                setLoadInput(event.target.value);
+                setLoadStatus('');
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  loadSettingsFromInput();
+                }
+              }}
+            />
+            <button
+              type="button"
+              className={styles.loadBtn}
+              onClick={loadSettingsFromInput}
+            >
+              Load settings
+            </button>
+          </div>
+          {loadStatus && (
+            <p
+              className={`${styles.loadStatus} ${
+                loadStatus.startsWith('Could') ? styles.loadStatusError : styles.loadStatusOk
+              }`}
+            >
+              {loadStatus}
+            </p>
+          )}
         </div>
       )}
 

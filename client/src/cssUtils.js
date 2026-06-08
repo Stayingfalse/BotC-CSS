@@ -129,6 +129,52 @@ export function buildHash(settings) {
     .replace(/=+$/, '');
 }
 
+function decodeHashToSettings(hash) {
+  try {
+    const trimmed = String(hash ?? '').trim();
+    if (!/^[A-Za-z0-9_-]+$/.test(trimmed)) return null;
+    const base64 = trimmed.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+    const json = atob(padded);
+    const parsed = JSON.parse(json);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+
+    const settings = { ...DEFAULTS };
+    for (const [key, value] of Object.entries(parsed)) {
+      if (Object.prototype.hasOwnProperty.call(DEFAULTS, key)) {
+        settings[key] = value;
+      }
+    }
+    return settings;
+  } catch {
+    return null;
+  }
+}
+
+function extractHashFromUrl(urlText) {
+  try {
+    const url = new URL(urlText);
+    const pathMatch = url.pathname.match(/\/css\/([A-Za-z0-9_-]+)/);
+    return pathMatch?.[1] ?? null;
+  } catch {
+    const fallbackMatch = String(urlText).match(/\/css\/([A-Za-z0-9_-]+)/);
+    return fallbackMatch?.[1] ?? null;
+  }
+}
+
+export function parseSettingsInput(input) {
+  const text = String(input ?? '').trim();
+  if (!text) return null;
+
+  const importMatch = text.match(/@import\s+url\((['"]?)([^'")]+)\1\)/i);
+  const fromImport = importMatch?.[2]?.trim();
+
+  const fromUrl = extractHashFromUrl(fromImport ?? text);
+  if (fromUrl) return decodeHashToSettings(fromUrl);
+
+  return decodeHashToSettings(text);
+}
+
 // ── CSS generation ───────────────────────────────────────────────────────────
 export function buildCSS(settings) {
   const {
