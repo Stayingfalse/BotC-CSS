@@ -1,6 +1,7 @@
-const express = require('express');
-const cors    = require('cors');
-const path    = require('path');
+const express   = require('express');
+const cors      = require('cors');
+const path      = require('path');
+const rateLimit = require('express-rate-limit');
 
 const { generateCSS }            = require('./cssGenerator');
 const { encodeSettings, decodeSettings, DEFAULTS } = require('./hashUtils');
@@ -8,12 +9,22 @@ const { encodeSettings, decodeSettings, DEFAULTS } = require('./hashUtils');
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
+// ── Rate limiting ────────────────────────────────────────────────────────────
+// CSS generation and API endpoints — generous for normal use, blocks abuse
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later.' },
+});
+
 app.use(cors());
 app.use(express.json());
 
 // ── CSS endpoint (for @import) ───────────────────────────────────────────────
 // GET /css/:hash  — decode hash → generate CSS → return as text/css
-app.get('/css/:hash', (req, res) => {
+app.get('/css/:hash', apiLimiter, (req, res) => {
   const settings = decodeSettings(req.params.hash);
   const css = generateCSS(settings);
   res.setHeader('Content-Type', 'text/css; charset=utf-8');
@@ -23,7 +34,7 @@ app.get('/css/:hash', (req, res) => {
 
 // ── API endpoints ────────────────────────────────────────────────────────────
 // POST /api/encode  — body: settings obj → { hash, importUrl, css }
-app.post('/api/encode', (req, res) => {
+app.post('/api/encode', apiLimiter, (req, res) => {
   const settings = { ...DEFAULTS, ...req.body };
   const hash = encodeSettings(settings);
   const baseUrl = `${req.protocol}://${req.get('host')}`;
@@ -33,7 +44,7 @@ app.post('/api/encode', (req, res) => {
 });
 
 // GET /api/decode/:hash  — hash → settings
-app.get('/api/decode/:hash', (req, res) => {
+app.get('/api/decode/:hash', apiLimiter, (req, res) => {
   const settings = decodeSettings(req.params.hash);
   res.json(settings);
 });
