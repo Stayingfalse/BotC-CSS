@@ -152,6 +152,7 @@ function decodeHashToSettings(hash) {
 }
 
 const SETTINGS_PATH_REGEX = /\/css\/([A-Za-z0-9_-]+)/;
+const IMPORT_URL_REGEX = /@import\s+url\((?:"([^"]+)"|'([^']+)'|([^)"']+))\)/i;
 
 function extractHashFromUrl(urlText) {
   try {
@@ -168,7 +169,7 @@ export function parseSettingsInput(input) {
   const text = String(input).trim();
   if (!text) return null;
 
-  const importMatch = text.match(/@import\s+url\((?:"([^"]+)"|'([^']+)'|([^)"']+))\)/i);
+  const importMatch = text.match(IMPORT_URL_REGEX);
   const fromImport = (importMatch?.[1] ?? importMatch?.[2] ?? importMatch?.[3] ?? '').trim();
 
   const fromUrl = extractHashFromUrl(fromImport ?? text);
