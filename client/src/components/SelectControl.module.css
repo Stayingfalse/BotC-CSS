@@ -1,0 +1,30 @@
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.label {
+  font-size: 0.78rem;
+  color: var(--color-text-mute);
+}
+
+.select {
+  background: var(--color-surface2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+  color: var(--color-text);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color var(--transition);
+  width: 100%;
+  appearance: auto;
+}
+.select:focus {
+  outline: none;
+  border-color: var(--color-gold-dim);
+}
+.select option {
+  background: var(--color-surface);
+}

@@ -1,0 +1,49 @@
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.label {
+  font-size: 0.75rem;
+  color: var(--color-text-mute);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.swatch {
+  width: 32px;
+  height: 28px;
+  flex-shrink: 0;
+  padding: 2px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: none;
+  cursor: pointer;
+}
+.swatch::-webkit-color-swatch-wrapper { padding: 0; }
+.swatch::-webkit-color-swatch         { border: none; border-radius: 3px; }
+
+.hex {
+  width: 80px;
+  flex: 1;
+  min-width: 0;
+  background: var(--color-surface2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 4px 6px;
+  color: var(--color-text);
+  font-size: 0.78rem;
+  font-family: monospace;
+  transition: border-color var(--transition);
+}
+.hex:focus {
+  outline: none;
+  border-color: var(--color-gold-dim);
+}
