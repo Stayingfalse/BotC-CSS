@@ -168,8 +168,8 @@ export function parseSettingsInput(input) {
   const text = String(input).trim();
   if (!text) return null;
 
-  const importMatch = text.match(/@import\s+url\((['"]?)([^'")]+)\1\)/i);
-  const fromImport = importMatch?.[2]?.trim();
+  const importMatch = text.match(/@import\s+url\((?:"([^"]+)"|'([^']+)'|([^)"']+))\)/i);
+  const fromImport = (importMatch?.[1] ?? importMatch?.[2] ?? importMatch?.[3] ?? '').trim();
 
   const fromUrl = extractHashFromUrl(fromImport ?? text);
   if (fromUrl) return decodeHashToSettings(fromUrl);

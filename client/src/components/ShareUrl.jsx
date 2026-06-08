@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { buildCSS, buildHash, parseSettingsInput } from '../cssUtils';
 import styles from './ShareUrl.module.css';
 
@@ -38,6 +38,12 @@ export default function ShareUrl({ settings, onLoadSettings }) {
     onLoadSettings(parsed);
     setLoadStatus({ type: 'success', message: 'Settings loaded.' });
   }, [loadInput, onLoadSettings]);
+
+  useEffect(() => {
+    if (!loadStatus) return undefined;
+    const timeoutId = setTimeout(() => setLoadStatus(null), 3000);
+    return () => clearTimeout(timeoutId);
+  }, [loadStatus]);
 
   return (
     <div className={styles.wrapper}>
