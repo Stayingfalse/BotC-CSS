@@ -131,7 +131,7 @@ export function buildHash(settings) {
 
 function decodeHashToSettings(hash) {
   try {
-    const trimmed = String(hash ?? '').trim();
+    const trimmed = String(hash).trim();
     if (!/^[A-Za-z0-9_-]+$/.test(trimmed)) return null;
     const base64 = trimmed.replace(/-/g, '+').replace(/_/g, '/');
     const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
@@ -165,7 +165,7 @@ function extractHashFromUrl(urlText) {
 }
 
 export function parseSettingsInput(input) {
-  const text = String(input ?? '').trim();
+  const text = String(input).trim();
   if (!text) return null;
 
   const importMatch = text.match(/@import\s+url\((['"]?)([^'")]+)\1\)/i);
