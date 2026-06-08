@@ -58,6 +58,13 @@ const SCRIPT_GALLERY = [
     status: 'Available now',
   },
   {
+    id: 'token-motion',
+    icon: '🌀',
+    name: 'Token Motion Customiser',
+    description: 'Jump straight to token animation controls for spin, rock, hybrid, and random effects.',
+    status: 'Available now',
+  },
+  {
     id: 'coming-soon-1',
     icon: '🧪',
     name: 'Character Sheet Theme',
@@ -131,6 +138,10 @@ export default function App() {
       setSelectedScript(scriptId);
       setActiveTab('colors');
     }
+    if (scriptId === 'token-motion') {
+      setSelectedScript('botc-sidebar');
+      setActiveTab('effects');
+    }
   }, []);
 
   const backgroundPreview = resolveBackgroundStyle(settings);
@@ -185,6 +196,31 @@ export default function App() {
               </article>
             ))}
           </div>
+
+          <section className={styles.galleryNotices}>
+            <article className={styles.galleryNoticeCard}>
+              <h3>Disclaimer</h3>
+              <p>
+                This site is in no way affiliated with The Pandemonium Institute (TPI) or Blood on the Clocktower.
+                It is a fan-made passion project to share custom styling finds with the community.
+              </p>
+            </article>
+            <article className={styles.galleryNoticeCard}>
+              <h3>Shared by Potato from The Grimoire</h3>
+              <p>
+                This site was created and shared by Potato, a community member of The Grimoire. If you want to ask
+                questions or join games, come hang out in the Discord.
+              </p>
+              <a
+                href="https://join.thegrim.gg/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.galleryNoticeLink}
+              >
+                Join The Grimoire Discord ↗
+              </a>
+            </article>
+          </section>
         </main>
       </div>
     );
