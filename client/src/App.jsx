@@ -112,6 +112,7 @@ export default function App() {
   const [settings, setSettings] = useState(() => readStoredSettings());
   const [activeTab, setActiveTab] = useState('colors');
   const [selectedScript, setSelectedScript] = useState(null);
+  const isTokenMotionCustomizer = selectedScript === 'token-motion';
 
   const update = useCallback((key, value) => {
     setSettings(prev => ({ ...prev, [key]: value }));
@@ -135,10 +136,10 @@ export default function App() {
 
   const openScript = useCallback((scriptId) => {
     if (scriptId === 'botc-sidebar') {
-      setSelectedScript(scriptId);
+      setSelectedScript('botc-sidebar');
       setActiveTab('colors');
     } else if (scriptId === 'token-motion') {
-      setSelectedScript('botc-sidebar');
+      setSelectedScript('token-motion');
       setActiveTab('effects');
     }
   }, []);
@@ -233,8 +234,12 @@ export default function App() {
           <div className={styles.logoArea}>
             <span className={styles.logoIcon}>🧙</span>
             <div>
-              <h1 className={styles.title}>BotC-CSS Customiser</h1>
-              <p className={styles.subtitle}>Style your Blood on the Clocktower sidebar script</p>
+              <h1 className={styles.title}>{isTokenMotionCustomizer ? 'Token Motion Customiser' : 'BotC-CSS Customiser'}</h1>
+              <p className={styles.subtitle}>
+                {isTokenMotionCustomizer
+                  ? 'Tune token animation controls for your sidebar style'
+                  : 'Style your Blood on the Clocktower sidebar script'}
+              </p>
             </div>
           </div>
           <div className={styles.headerActions}>
@@ -267,7 +272,9 @@ export default function App() {
               { id: 'type',     label: '✍️ Typography' },
               { id: 'layout',   label: '📐 Layout' },
               { id: 'effects',  label: '✨ Effects' },
-            ].map(tab => (
+            ]
+              .filter(tab => !isTokenMotionCustomizer || tab.id === 'effects')
+              .map(tab => (
               <button
                 key={tab.id}
                 className={`${styles.tab} ${activeTab === tab.id ? styles.tabActive : ''}`}
