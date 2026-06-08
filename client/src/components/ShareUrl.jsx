@@ -2,18 +2,25 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { buildCSS, buildHash, parseSettingsInput } from '../cssUtils';
 import styles from './ShareUrl.module.css';
 
-export default function ShareUrl({ settings, onLoadSettings }) {
+export default function ShareUrl({
+  settings,
+  onLoadSettings,
+  buildHashFn = buildHash,
+  buildCSSFn  = buildCSS,
+  cssPath     = '/css',
+  parseInputFn = parseSettingsInput,
+}) {
   const [activeView, setActiveView] = useState('import');
   const [copiedKey, setCopiedKey]   = useState(null);
   const [loadInput, setLoadInput] = useState('');
   const [loadStatus, setLoadStatus] = useState(null);
 
-  const hash      = useMemo(() => buildHash(settings), [settings]);
-  const css       = useMemo(() => buildCSS(settings), [settings]);
+  const hash      = useMemo(() => buildHashFn(settings), [settings, buildHashFn]);
+  const css       = useMemo(() => buildCSSFn(settings), [settings, buildCSSFn]);
   const importUrl = useMemo(() => {
     const base = window.location.origin;
-    return `${base}/css/${hash}`;
-  }, [hash]);
+    return `${base}${cssPath}/${hash}`;
+  }, [hash, cssPath]);
 
   const copy = useCallback(async (text, key) => {
     try {
@@ -26,7 +33,7 @@ export default function ShareUrl({ settings, onLoadSettings }) {
   }, []);
 
   const loadSettingsFromInput = useCallback(() => {
-    const parsed = parseSettingsInput(loadInput);
+    const parsed = parseInputFn(loadInput);
     if (!parsed) {
       setLoadStatus({ type: 'error', message: 'Invalid settings format.' });
       return;
@@ -37,7 +44,7 @@ export default function ShareUrl({ settings, onLoadSettings }) {
     }
     onLoadSettings(parsed);
     setLoadStatus({ type: 'success', message: 'Settings loaded.' });
-  }, [loadInput, onLoadSettings]);
+  }, [loadInput, onLoadSettings, parseInputFn]);
 
   useEffect(() => {
     if (!loadStatus) return undefined;

@@ -1,13 +1,16 @@
 import { useState, useCallback, useEffect } from 'react';
-import ColorControl  from './components/ColorControl';
-import ToggleControl from './components/ToggleControl';
-import SelectControl from './components/SelectControl';
-import RangeControl  from './components/RangeControl';
-import Preview       from './components/Preview';
-import ShareUrl      from './components/ShareUrl';
+import ColorControl        from './components/ColorControl';
+import ToggleControl       from './components/ToggleControl';
+import SelectControl       from './components/SelectControl';
+import RangeControl        from './components/RangeControl';
+import Preview             from './components/Preview';
+import TokenMotionPreview  from './components/TokenMotionPreview';
+import ShareUrl            from './components/ShareUrl';
 import { DEFAULTS, BACKGROUND_PRESETS, resolveBackgroundStyle } from './cssUtils';
-import styles        from './App.module.css';
+import { TOKEN_MOTION_DEFAULTS, buildTokenMotionHash, buildTokenMotionCSS, parseTokenMotionInput } from './tokenMotionUtils';
+import styles from './App.module.css';
 
+// ── Sidebar control options ────────────────────────────────────────────────────
 const FONT_OPTIONS = [
   { value: '',                  label: 'Default (inherit)' },
   { value: 'Georgia, serif',    label: 'Georgia' },
@@ -22,33 +25,35 @@ const FONT_OPTIONS = [
 ];
 
 const BACKGROUND_MODE_OPTIONS = [
-  { value: 'single', label: 'Single colour' },
+  { value: 'single',   label: 'Single colour' },
   { value: 'gradient', label: '3 custom colours' },
-  { value: 'preset', label: 'Preset gradient' },
+  { value: 'preset',   label: 'Preset gradient' },
 ];
 
+// ── Token motion control options ───────────────────────────────────────────────
 const MOTION_TYPE_OPTIONS = [
-  { value: 'spin', label: 'Spin' },
-  { value: 'rock', label: 'Rock' },
+  { value: 'spin',   label: 'Spin' },
+  { value: 'rock',   label: 'Rock' },
   { value: 'hybrid', label: 'Hybrid' },
   { value: 'random', label: 'Random (mixed)' },
 ];
 
 const MOTION_WHEN_OPTIONS = [
-  { value: 'off', label: 'Off' },
-  { value: 'always', label: 'Always' },
-  { value: 'hover', label: 'On hover' },
+  { value: 'off',       label: 'Off' },
+  { value: 'always',    label: 'Always' },
+  { value: 'hover',     label: 'On hover' },
   { value: 'not-hover', label: 'When not hovered' },
 ];
 
 const MOTION_EASE_OPTIONS = [
-  { value: 'linear', label: 'Linear' },
-  { value: 'ease', label: 'Ease' },
-  { value: 'ease-in', label: 'Ease in' },
-  { value: 'ease-out', label: 'Ease out' },
+  { value: 'linear',      label: 'Linear' },
+  { value: 'ease',        label: 'Ease' },
+  { value: 'ease-in',     label: 'Ease in' },
+  { value: 'ease-out',    label: 'Ease out' },
   { value: 'ease-in-out', label: 'Ease in/out' },
 ];
 
+// ── Script gallery entries ─────────────────────────────────────────────────────
 const SCRIPT_GALLERY = [
   {
     id: 'botc-sidebar',
@@ -60,8 +65,8 @@ const SCRIPT_GALLERY = [
   {
     id: 'token-motion',
     icon: '🌀',
-    name: 'Token Motion Customiser',
-    description: 'Jump straight to token animation controls for spin, rock, hybrid, and random effects.',
+    name: 'Player Token Motion',
+    description: 'Add spin, rock, hybrid, or random animation to player tokens on the grimoire board.',
     status: 'Available now',
   },
   {
@@ -82,7 +87,11 @@ const SCRIPT_GALLERY = [
   },
 ];
 
-const SETTINGS_STORAGE_KEY = 'botc-css-settings';
+// ── Storage keys (one per tool) ────────────────────────────────────────────────
+const SIDEBAR_STORAGE_KEY = 'botc-css-sidebar-settings';
+const MOTION_STORAGE_KEY  = 'botc-css-token-motion-settings';
+
+// ── URL routing ────────────────────────────────────────────────────────────────
 const HOME_ROUTE = '/';
 
 function normalisePathname(pathname) {
@@ -92,78 +101,102 @@ function normalisePathname(pathname) {
 
 function resolveRoute(pathname) {
   const route = normalisePathname(pathname);
-  if (route === '/botc-sidebar') {
-    return { selectedScript: 'botc-sidebar', activeTab: 'colors', pathname: route };
-  }
-  if (route === '/token-motion') {
-    return { selectedScript: 'token-motion', activeTab: 'effects', pathname: route };
-  }
+  if (route === '/botc-sidebar')   return { selectedScript: 'botc-sidebar',  activeTab: 'colors',  pathname: route };
+  if (route === '/token-motion')   return { selectedScript: 'token-motion',  activeTab: 'motion',  pathname: route };
   return { selectedScript: null, activeTab: 'colors', pathname: HOME_ROUTE };
 }
 
 function resolveScriptRoute(scriptId) {
-  if (scriptId === 'botc-sidebar') {
-    return { selectedScript: 'botc-sidebar', activeTab: 'colors', pathname: '/botc-sidebar' };
-  }
-  if (scriptId === 'token-motion') {
-    return { selectedScript: 'token-motion', activeTab: 'effects', pathname: '/token-motion' };
-  }
+  if (scriptId === 'botc-sidebar') return { selectedScript: 'botc-sidebar', activeTab: 'colors', pathname: '/botc-sidebar' };
+  if (scriptId === 'token-motion') return { selectedScript: 'token-motion', activeTab: 'motion', pathname: '/token-motion' };
   return { selectedScript: null, activeTab: 'colors', pathname: HOME_ROUTE };
 }
 
-function normaliseSettings(candidate) {
-  if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) {
-    return { ...DEFAULTS };
-  }
+// ── Settings helpers ───────────────────────────────────────────────────────────
+function normaliseSidebarSettings(candidate) {
+  if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return { ...DEFAULTS };
   const next = { ...DEFAULTS };
   for (const key of Object.keys(DEFAULTS)) {
-    if (candidate[key] !== undefined) {
-      next[key] = candidate[key];
-    }
+    if (candidate[key] !== undefined) next[key] = candidate[key];
   }
   return next;
 }
 
-function readStoredSettings() {
-  if (typeof window === 'undefined') return { ...DEFAULTS };
+function normaliseMotionSettings(candidate) {
+  if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return { ...TOKEN_MOTION_DEFAULTS };
+  const next = { ...TOKEN_MOTION_DEFAULTS };
+  for (const key of Object.keys(TOKEN_MOTION_DEFAULTS)) {
+    if (candidate[key] !== undefined) next[key] = candidate[key];
+  }
+  return next;
+}
+
+function readStoredSettings(storageKey, normalise, defaults) {
+  if (typeof window === 'undefined') return { ...defaults };
   try {
-    const stored = window.localStorage.getItem(SETTINGS_STORAGE_KEY);
-    if (!stored) return { ...DEFAULTS };
-    return normaliseSettings(JSON.parse(stored));
+    const stored = window.localStorage.getItem(storageKey);
+    if (!stored) return { ...defaults };
+    return normalise(JSON.parse(stored));
   } catch {
-    return { ...DEFAULTS };
+    return { ...defaults };
   }
 }
 
+// ── App ────────────────────────────────────────────────────────────────────────
 export default function App() {
   const initialRoute = typeof window === 'undefined'
     ? resolveRoute(HOME_ROUTE)
     : resolveRoute(window.location.pathname);
-  const [settings, setSettings] = useState(() => readStoredSettings());
+
+  // Sidebar tool state
+  const [sidebarSettings, setSidebarSettings] = useState(
+    () => readStoredSettings(SIDEBAR_STORAGE_KEY, normaliseSidebarSettings, DEFAULTS)
+  );
   const [activeTab, setActiveTab] = useState(initialRoute.activeTab);
+
+  // Token motion tool state
+  const [motionSettings, setMotionSettings] = useState(
+    () => readStoredSettings(MOTION_STORAGE_KEY, normaliseMotionSettings, TOKEN_MOTION_DEFAULTS)
+  );
+
+  // Navigation
   const [selectedScript, setSelectedScript] = useState(initialRoute.selectedScript);
-  const isTokenMotionCustomizer = selectedScript === 'token-motion';
 
-  const update = useCallback((key, value) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
+  // ── Sidebar callbacks ────────────────────────────────────────────────────────
+  const updateSidebar = useCallback((key, value) => {
+    setSidebarSettings(prev => ({ ...prev, [key]: value }));
   }, []);
 
-  const reset = useCallback(() => {
-    setSettings({ ...DEFAULTS });
+  const resetSidebar = useCallback(() => {
+    setSidebarSettings({ ...DEFAULTS });
   }, []);
 
-  const loadSettings = useCallback((nextSettings) => {
-    setSettings(normaliseSettings(nextSettings));
+  const loadSidebarSettings = useCallback((nextSettings) => {
+    setSidebarSettings(normaliseSidebarSettings(nextSettings));
   }, []);
 
   const chooseBackgroundMode = useCallback((mode) => {
-    setSettings(prev => ({ ...prev, bm: mode }));
+    setSidebarSettings(prev => ({ ...prev, bm: mode }));
   }, []);
 
   const applyPreset = useCallback((presetId) => {
-    setSettings(prev => ({ ...prev, bm: 'preset', bp: presetId }));
+    setSidebarSettings(prev => ({ ...prev, bm: 'preset', bp: presetId }));
   }, []);
 
+  // ── Token motion callbacks ───────────────────────────────────────────────────
+  const updateMotion = useCallback((key, value) => {
+    setMotionSettings(prev => ({ ...prev, [key]: value }));
+  }, []);
+
+  const resetMotion = useCallback(() => {
+    setMotionSettings({ ...TOKEN_MOTION_DEFAULTS });
+  }, []);
+
+  const loadMotionSettings = useCallback((nextSettings) => {
+    setMotionSettings(normaliseMotionSettings(nextSettings));
+  }, []);
+
+  // ── URL navigation ───────────────────────────────────────────────────────────
   const navigateToScript = useCallback((scriptId, { pushHistory = true } = {}) => {
     const route = resolveScriptRoute(scriptId);
     setSelectedScript(route.selectedScript);
@@ -176,8 +209,18 @@ export default function App() {
     }
   }, []);
 
-  const backgroundPreview = resolveBackgroundStyle(settings);
+  // ── Persist settings to localStorage ────────────────────────────────────────
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try { window.localStorage.setItem(SIDEBAR_STORAGE_KEY, JSON.stringify(sidebarSettings)); } catch { /* ignore */ }
+  }, [sidebarSettings]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try { window.localStorage.setItem(MOTION_STORAGE_KEY, JSON.stringify(motionSettings)); } catch { /* ignore */ }
+  }, [motionSettings]);
+
+  // ── Browser back / forward ───────────────────────────────────────────────────
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
 
@@ -191,15 +234,9 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
-    } catch {
-      // localStorage unavailable — keep session-only state
-    }
-  }, [settings]);
+  const backgroundPreview = resolveBackgroundStyle(sidebarSettings);
 
+  // ── Gallery view ─────────────────────────────────────────────────────────────
   if (!selectedScript) {
     return (
       <div className={styles.app}>
@@ -271,20 +308,124 @@ export default function App() {
     );
   }
 
+  // ── Shared customizer header / back button ────────────────────────────────────
+  const customizerTitle    = selectedScript === 'token-motion' ? 'Player Token Motion' : 'BotC-CSS Customiser';
+  const customizerSubtitle = selectedScript === 'token-motion'
+    ? 'Animate player tokens on the grimoire board — independent of the sidebar script'
+    : 'Style your Blood on the Clocktower sidebar script';
+
+  // ── Token Motion customizer ───────────────────────────────────────────────────
+  if (selectedScript === 'token-motion') {
+    return (
+      <div className={styles.app}>
+        <header className={styles.header}>
+          <div className={styles.headerInner}>
+            <div className={styles.logoArea}>
+              <span className={styles.logoIcon}>🌀</span>
+              <div>
+                <h1 className={styles.title}>{customizerTitle}</h1>
+                <p className={styles.subtitle}>{customizerSubtitle}</p>
+              </div>
+            </div>
+            <div className={styles.headerActions}>
+              <button
+                type="button"
+                className={styles.headerBackBtn}
+                onClick={() => navigateToScript(null)}
+              >
+                ← Script gallery
+              </button>
+              <a
+                href="https://botc.app"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.headerLink}
+              >
+                botc.app ↗
+              </a>
+            </div>
+          </div>
+        </header>
+
+        <div className={styles.layout}>
+          <aside className={styles.controls}>
+            <div className={styles.controlsBody}>
+              <section className={styles.section}>
+                <h2 className={styles.sectionTitle}>Motion Type</h2>
+                <p className={styles.hint}>
+                  Choose how player tokens animate on the grimoire board.
+                </p>
+                <SelectControl
+                  label="Motion type"
+                  value={motionSettings.mt}
+                  options={MOTION_TYPE_OPTIONS}
+                  onChange={v => updateMotion('mt', v)}
+                />
+
+                <h2 className={styles.sectionTitle} style={{ marginTop: '1.25rem' }}>Trigger</h2>
+                <p className={styles.hint}>
+                  When should the animation play? Hover over a token in the preview to test.
+                </p>
+                <SelectControl
+                  label="When"
+                  value={motionSettings.mw}
+                  options={MOTION_WHEN_OPTIONS}
+                  onChange={v => updateMotion('mw', v)}
+                />
+
+                <h2 className={styles.sectionTitle} style={{ marginTop: '1.25rem' }}>Speed &amp; Easing</h2>
+                <RangeControl
+                  label="Speed"
+                  value={motionSettings.ms}
+                  min={0.2}
+                  max={3}
+                  step={0.1}
+                  unit="x"
+                  onChange={v => updateMotion('ms', Number(v))}
+                />
+                <SelectControl
+                  label="Easing"
+                  value={motionSettings.me}
+                  options={MOTION_EASE_OPTIONS}
+                  onChange={v => updateMotion('me', v)}
+                />
+              </section>
+            </div>
+
+            <ShareUrl
+              settings={motionSettings}
+              onLoadSettings={loadMotionSettings}
+              buildHashFn={buildTokenMotionHash}
+              buildCSSFn={buildTokenMotionCSS}
+              cssPath="/token-motion-css"
+              parseInputFn={parseTokenMotionInput}
+            />
+
+            <div className={styles.controlsFooter}>
+              <button className={styles.resetBtn} onClick={resetMotion}>
+                ↺ Reset to defaults
+              </button>
+            </div>
+          </aside>
+
+          <main className={styles.main}>
+            <TokenMotionPreview settings={motionSettings} />
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  // ── BotC Sidebar customizer ───────────────────────────────────────────────────
   return (
     <div className={styles.app}>
-      {/* ── Header ── */}
       <header className={styles.header}>
         <div className={styles.headerInner}>
           <div className={styles.logoArea}>
             <span className={styles.logoIcon}>🧙</span>
             <div>
-              <h1 className={styles.title}>{isTokenMotionCustomizer ? 'Token Motion Customiser' : 'BotC-CSS Customiser'}</h1>
-              <p className={styles.subtitle}>
-                {isTokenMotionCustomizer
-                  ? 'Tune token animation controls for your sidebar style'
-                  : 'Style your Blood on the Clocktower sidebar script'}
-              </p>
+              <h1 className={styles.title}>{customizerTitle}</h1>
+              <p className={styles.subtitle}>{customizerSubtitle}</p>
             </div>
           </div>
           <div className={styles.headerActions}>
@@ -307,19 +448,15 @@ export default function App() {
         </div>
       </header>
 
-      {/* ── Main layout ── */}
       <div className={styles.layout}>
-        {/* ── Controls panel ── */}
         <aside className={styles.controls}>
           <nav className={styles.tabs}>
             {[
-              { id: 'colors',   label: '🎨 Colours' },
-              { id: 'type',     label: '✍️ Typography' },
-              { id: 'layout',   label: '📐 Layout' },
-              { id: 'effects',  label: '✨ Effects' },
-            ]
-              .filter(tab => !isTokenMotionCustomizer || tab.id === 'effects')
-              .map(tab => (
+              { id: 'colors',  label: '🎨 Colours' },
+              { id: 'type',    label: '✍️ Typography' },
+              { id: 'layout',  label: '📐 Layout' },
+              { id: 'effects', label: '✨ Effects' },
+            ].map(tab => (
               <button
                 key={tab.id}
                 className={`${styles.tab} ${activeTab === tab.id ? styles.tabActive : ''}`}
@@ -336,7 +473,7 @@ export default function App() {
                 <h2 className={styles.sectionTitle}>Background Colour Style</h2>
                 <SelectControl
                   label="Mode"
-                  value={settings.bm}
+                  value={sidebarSettings.bm}
                   options={BACKGROUND_MODE_OPTIONS}
                   onChange={chooseBackgroundMode}
                 />
@@ -345,41 +482,41 @@ export default function App() {
                   style={{ background: backgroundPreview }}
                 />
 
-                {settings.bm === 'single' && (
+                {sidebarSettings.bm === 'single' && (
                   <>
                     <p className={styles.hint}>Use one solid background colour.</p>
                     <ColorControl
                       label="Background"
-                      value={settings.bs}
-                      onChange={v => update('bs', v)}
+                      value={sidebarSettings.bs}
+                      onChange={v => updateSidebar('bs', v)}
                     />
                   </>
                 )}
 
-                {settings.bm === 'gradient' && (
+                {sidebarSettings.bm === 'gradient' && (
                   <>
                     <p className={styles.hint}>Use a custom 3-stop gradient.</p>
                     <div className={styles.gradientRow}>
                       <ColorControl
                         label="Start"
-                        value={settings.bg1}
-                        onChange={v => update('bg1', v)}
+                        value={sidebarSettings.bg1}
+                        onChange={v => updateSidebar('bg1', v)}
                       />
                       <ColorControl
                         label="Middle"
-                        value={settings.bg2}
-                        onChange={v => update('bg2', v)}
+                        value={sidebarSettings.bg2}
+                        onChange={v => updateSidebar('bg2', v)}
                       />
                       <ColorControl
                         label="End"
-                        value={settings.bg3}
-                        onChange={v => update('bg3', v)}
+                        value={sidebarSettings.bg3}
+                        onChange={v => updateSidebar('bg3', v)}
                       />
                     </div>
                   </>
                 )}
 
-                {settings.bm === 'preset' && (
+                {sidebarSettings.bm === 'preset' && (
                   <>
                     <p className={styles.hint}>Choose from preset gradients, including rainbow and parchment styles.</p>
                     <div className={styles.presetGrid}>
@@ -387,7 +524,7 @@ export default function App() {
                         <button
                           key={preset.id}
                           type="button"
-                          className={`${styles.presetBtn} ${settings.bp === preset.id ? styles.presetBtnActive : ''}`}
+                          className={`${styles.presetBtn} ${sidebarSettings.bp === preset.id ? styles.presetBtnActive : ''}`}
                           onClick={() => applyPreset(preset.id)}
                         >
                           <span className={styles.presetLabel}>{preset.label}</span>
@@ -402,15 +539,15 @@ export default function App() {
                 <p className={styles.hint}>Used for the side border and section dividers.</p>
                 <ColorControl
                   label="Border / Divider"
-                  value={settings.bc}
-                  onChange={v => update('bc', v)}
+                  value={sidebarSettings.bc}
+                  onChange={v => updateSidebar('bc', v)}
                 />
 
                 <h2 className={styles.sectionTitle} style={{ marginTop: '1.25rem' }}>Text</h2>
                 <ColorControl
                   label="Character name colour"
-                  value={settings.tc}
-                  onChange={v => update('tc', v)}
+                  value={sidebarSettings.tc}
+                  onChange={v => updateSidebar('tc', v)}
                 />
               </section>
             )}
@@ -420,36 +557,36 @@ export default function App() {
                 <h2 className={styles.sectionTitle}>Font Family</h2>
                 <SelectControl
                   label="Character name font"
-                  value={settings.ff}
+                  value={sidebarSettings.ff}
                   options={FONT_OPTIONS}
-                  onChange={v => update('ff', v)}
+                  onChange={v => updateSidebar('ff', v)}
                 />
 
                 <h2 className={styles.sectionTitle} style={{ marginTop: '1.25rem' }}>Font Size</h2>
                 <RangeControl
                   label="Character name size"
-                  value={settings.fs}
+                  value={sidebarSettings.fs}
                   min={10}
                   max={22}
                   step={1}
                   unit="px"
-                  onChange={v => update('fs', Number(v))}
+                  onChange={v => updateSidebar('fs', Number(v))}
                 />
 
                 <h2 className={styles.sectionTitle} style={{ marginTop: '1.25rem' }}>Text Style</h2>
                 <ToggleControl
                   label="Uppercase character names"
-                  checked={settings.tt}
-                  onChange={v => update('tt', v)}
+                  checked={sidebarSettings.tt}
+                  onChange={v => updateSidebar('tt', v)}
                 />
                 <RangeControl
                   label="Letter spacing"
-                  value={settings.ls}
+                  value={sidebarSettings.ls}
                   min={0}
                   max={4}
                   step={0.1}
                   unit="px"
-                  onChange={v => update('ls', Number(v))}
+                  onChange={v => updateSidebar('ls', Number(v))}
                 />
               </section>
             )}
@@ -459,43 +596,43 @@ export default function App() {
                 <h2 className={styles.sectionTitle}>Sidebar Width</h2>
                 <RangeControl
                   label="Width"
-                  value={settings.w}
+                  value={sidebarSettings.w}
                   min={200}
                   max={400}
                   step={10}
                   unit="px"
-                  onChange={v => update('w', Number(v))}
+                  onChange={v => updateSidebar('w', Number(v))}
                 />
 
                 <h2 className={styles.sectionTitle} style={{ marginTop: '1.25rem' }}>Sidebar Padding</h2>
                 <RangeControl
                   label="Top padding"
-                  value={settings.pt}
+                  value={sidebarSettings.pt}
                   min={0}
                   max={80}
                   step={5}
                   unit="px"
-                  onChange={v => update('pt', Number(v))}
+                  onChange={v => updateSidebar('pt', Number(v))}
                 />
                 <RangeControl
                   label="Left inset"
-                  value={settings.pl}
+                  value={sidebarSettings.pl}
                   min={0}
                   max={60}
                   step={5}
                   unit="px"
-                  onChange={v => update('pl', Number(v))}
+                  onChange={v => updateSidebar('pl', Number(v))}
                 />
 
                 <h2 className={styles.sectionTitle} style={{ marginTop: '1.25rem' }}>Border / Divider</h2>
                 <RangeControl
                   label="Thickness"
-                  value={settings.bw}
+                  value={sidebarSettings.bw}
                   min={0}
                   max={8}
                   step={1}
                   unit="px"
-                  onChange={v => update('bw', Number(v))}
+                  onChange={v => updateSidebar('bw', Number(v))}
                 />
               </section>
             )}
@@ -508,77 +645,44 @@ export default function App() {
                 </p>
                 <ToggleControl
                   label="Show torn-edge mask"
-                  checked={settings.m}
-                  onChange={v => update('m', v)}
+                  checked={sidebarSettings.m}
+                  onChange={v => updateSidebar('m', v)}
                 />
 
                 <h2 className={styles.sectionTitle} style={{ marginTop: '1.25rem' }}>Background Artwork</h2>
                 <RangeControl
                   label="Token icon opacity"
-                  value={settings.io}
+                  value={sidebarSettings.io}
                   min={0}
                   max={100}
                   step={5}
                   unit="%"
-                  onChange={v => update('io', Number(v))}
+                  onChange={v => updateSidebar('io', Number(v))}
                 />
                 <RangeControl
                   label="Token icon size"
-                  value={settings.is}
+                  value={sidebarSettings.is}
                   min={120}
                   max={260}
                   step={10}
                   unit="px"
-                  onChange={v => update('is', Number(v))}
-                />
-
-                <h2 className={styles.sectionTitle} style={{ marginTop: '1.25rem' }}>Token Motion</h2>
-                <p className={styles.hint}>
-                  Use the preview pane to test hover-triggered motion styles.
-                </p>
-                <SelectControl
-                  label="Motion type"
-                  value={settings.mt}
-                  options={MOTION_TYPE_OPTIONS}
-                  onChange={v => update('mt', v)}
-                />
-                <SelectControl
-                  label="When"
-                  value={settings.mw}
-                  options={MOTION_WHEN_OPTIONS}
-                  onChange={v => update('mw', v)}
-                />
-                <RangeControl
-                  label="Speed"
-                  value={settings.ms}
-                  min={0.2}
-                  max={3}
-                  step={0.1}
-                  unit="x"
-                  onChange={v => update('ms', Number(v))}
-                />
-                <SelectControl
-                  label="Easing"
-                  value={settings.me}
-                  options={MOTION_EASE_OPTIONS}
-                  onChange={v => update('me', v)}
+                  onChange={v => updateSidebar('is', Number(v))}
                 />
               </section>
             )}
           </div>
 
-          <ShareUrl settings={settings} onLoadSettings={loadSettings} />
+          <ShareUrl settings={sidebarSettings} onLoadSettings={loadSidebarSettings} />
 
           <div className={styles.controlsFooter}>
-            <button className={styles.resetBtn} onClick={reset}>
+            <button className={styles.resetBtn} onClick={resetSidebar}>
               ↺ Reset to defaults
             </button>
           </div>
         </aside>
 
-        {/* ── Preview panel ── */}
         <main className={styles.main}>
-          <Preview settings={settings} />
+          <Preview settings={sidebarSettings} />
         </main>
       </div>
     </div>
