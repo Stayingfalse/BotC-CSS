@@ -424,6 +424,5 @@ ${heightRules}
 }
 `;
 }
-}
 
 module.exports = { generateCSS };
