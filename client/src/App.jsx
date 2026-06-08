@@ -320,6 +320,8 @@ export default function App() {
             )}
           </div>
 
+          <ShareUrl settings={settings} />
+
           <div className={styles.controlsFooter}>
             <button className={styles.resetBtn} onClick={reset}>
               ↺ Reset to defaults
@@ -327,10 +329,9 @@ export default function App() {
           </div>
         </aside>
 
-        {/* ── Preview + Share panel ── */}
+        {/* ── Preview panel ── */}
         <main className={styles.main}>
           <Preview settings={settings} />
-          <ShareUrl settings={settings} />
         </main>
       </div>
     </div>
