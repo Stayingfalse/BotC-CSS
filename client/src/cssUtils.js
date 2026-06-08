@@ -133,9 +133,9 @@ function buildMotionCss({ motionType, motionWhen, motionEase, spinDuration, rock
   };
 
   if (motionType === 'random') {
-    return `${applyWhen(`${rockDuration}s botcTokenRock ${motionEase} infinite`) }
+    return `${applyWhen(`${spinDuration}s botcTokenSpin ${motionEase} infinite`, ':nth-child(odd)') }
 
-  ${applyWhen(`${spinDuration}s botcTokenSpin ${motionEase} infinite`, ':nth-child(even)') }`;
+  ${applyWhen(`${rockDuration}s botcTokenRock ${motionEase} infinite`, ':nth-child(even)') }`;
   }
 
   if (motionType === 'spin') {
@@ -565,7 +565,7 @@ aside.character.tab:not(.character-open):not(.positioned) {
 
 @keyframes botcTokenSpin {
   0% { rotate: 0deg; }
-  50% { rotate: 1046deg; } /* ~3 full turns, then bounce back to origin */
+  50% { rotate: 1046deg; } /* ~2.9 full turns, then bounce back to origin */
   100% { rotate: 0deg; }
 }
 
