@@ -32,6 +32,13 @@ const FONT_OPTIONS = [
   { value: "'MedievalSharp', fantasy", label: 'Fantasy' },
 ];
 
+const RAINBOW_PRESETS = [
+  { id: 'sunrise', label: 'Sunrise', bg1: '#ff6b6b', bg2: '#feca57', bg3: '#48dbfb' },
+  { id: 'pride', label: 'Pride', bg1: '#e40303', bg2: '#732982', bg3: '#004dff' },
+  { id: 'fae', label: 'Fae', bg1: '#ff9ff3', bg2: '#feca57', bg3: '#1dd1a1' },
+  { id: 'aurora', label: 'Aurora', bg1: '#5f27cd', bg2: '#00d2d3', bg3: '#54a0ff' },
+];
+
 export default function App() {
   const [settings, setSettings] = useState({ ...DEFAULT_SETTINGS });
   const [activeTab, setActiveTab] = useState('colors');
@@ -42,6 +49,15 @@ export default function App() {
 
   const reset = useCallback(() => {
     setSettings({ ...DEFAULT_SETTINGS });
+  }, []);
+
+  const applyRainbowPreset = useCallback((preset) => {
+    setSettings(prev => ({
+      ...prev,
+      bg1: preset.bg1,
+      bg2: preset.bg2,
+      bg3: preset.bg3,
+    }));
   }, []);
 
   return (
@@ -113,6 +129,34 @@ export default function App() {
                 <div className={styles.gradientPreviewSwatch}
                   style={{ background: `linear-gradient(135deg, ${settings.bg1} 0%, ${settings.bg2} 50%, ${settings.bg3} 100%)` }}
                 />
+
+                <h2 className={styles.sectionTitle} style={{ marginTop: '1.25rem' }}>Rainbow Mode</h2>
+                <p className={styles.hint}>Choose a pre-set rainbow gradient for the sidebar background.</p>
+                <div className={styles.presetGrid}>
+                  {RAINBOW_PRESETS.map(preset => {
+                    const isActive =
+                      settings.bg1 === preset.bg1 &&
+                      settings.bg2 === preset.bg2 &&
+                      settings.bg3 === preset.bg3;
+
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        className={`${styles.presetBtn} ${isActive ? styles.presetBtnActive : ''}`}
+                        onClick={() => applyRainbowPreset(preset)}
+                      >
+                        <span className={styles.presetLabel}>{preset.label}</span>
+                        <span
+                          className={styles.presetSwatch}
+                          style={{
+                            background: `linear-gradient(135deg, ${preset.bg1} 0%, ${preset.bg2} 50%, ${preset.bg3} 100%)`,
+                          }}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
 
                 <h2 className={styles.sectionTitle} style={{ marginTop: '1.25rem' }}>Accent Colour</h2>
                 <p className={styles.hint}>Used for the side border and section dividers.</p>
