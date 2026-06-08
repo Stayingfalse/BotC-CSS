@@ -6,7 +6,7 @@ export default function ShareUrl({ settings, onLoadSettings }) {
   const [activeView, setActiveView] = useState('import');
   const [copiedKey, setCopiedKey]   = useState(null);
   const [loadInput, setLoadInput] = useState('');
-  const [loadStatus, setLoadStatus] = useState('');
+  const [loadStatus, setLoadStatus] = useState(null);
 
   const hash      = useMemo(() => buildHash(settings), [settings]);
   const css       = useMemo(() => buildCSS(settings), [settings]);
@@ -28,11 +28,11 @@ export default function ShareUrl({ settings, onLoadSettings }) {
   const loadSettingsFromInput = useCallback(() => {
     const parsed = parseSettingsInput(loadInput);
     if (!parsed || !onLoadSettings) {
-      setLoadStatus('Could not read settings from that value.');
+      setLoadStatus({ type: 'error', message: 'Could not read settings from that value.' });
       return;
     }
     onLoadSettings(parsed);
-    setLoadStatus('Settings loaded.');
+    setLoadStatus({ type: 'success', message: 'Settings loaded.' });
   }, [loadInput, onLoadSettings]);
 
   return (
@@ -88,7 +88,7 @@ export default function ShareUrl({ settings, onLoadSettings }) {
               placeholder="Paste hash, @import line, or /css URL"
               onChange={(event) => {
                 setLoadInput(event.target.value);
-                setLoadStatus('');
+                setLoadStatus(null);
               }}
               onKeyDown={(event) => {
                 if (event.key === 'Enter') {
@@ -107,10 +107,10 @@ export default function ShareUrl({ settings, onLoadSettings }) {
           {loadStatus && (
             <p
               className={`${styles.loadStatus} ${
-                loadStatus.startsWith('Could') ? styles.loadStatusError : styles.loadStatusOk
+                loadStatus.type === 'error' ? styles.loadStatusError : styles.loadStatusOk
               }`}
             >
-              {loadStatus}
+              {loadStatus.message}
             </p>
           )}
         </div>
