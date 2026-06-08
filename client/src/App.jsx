@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import ColorControl  from './components/ColorControl';
 import ToggleControl from './components/ToggleControl';
 import SelectControl from './components/SelectControl';
@@ -53,8 +53,34 @@ const SCRIPT_GALLERY = [
   },
 ];
 
+const SETTINGS_STORAGE_KEY = 'botc-css-settings';
+
+function normaliseSettings(candidate) {
+  if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) {
+    return { ...DEFAULTS };
+  }
+  const next = { ...DEFAULTS };
+  for (const key of Object.keys(DEFAULTS)) {
+    if (candidate[key] !== undefined) {
+      next[key] = candidate[key];
+    }
+  }
+  return next;
+}
+
+function readStoredSettings() {
+  if (typeof window === 'undefined') return { ...DEFAULTS };
+  try {
+    const stored = window.localStorage.getItem(SETTINGS_STORAGE_KEY);
+    if (!stored) return { ...DEFAULTS };
+    return normaliseSettings(JSON.parse(stored));
+  } catch {
+    return { ...DEFAULTS };
+  }
+}
+
 export default function App() {
-  const [settings, setSettings] = useState({ ...DEFAULTS });
+  const [settings, setSettings] = useState(() => readStoredSettings());
   const [activeTab, setActiveTab] = useState('colors');
   const [selectedScript, setSelectedScript] = useState(null);
 
@@ -64,6 +90,10 @@ export default function App() {
 
   const reset = useCallback(() => {
     setSettings({ ...DEFAULTS });
+  }, []);
+
+  const loadSettings = useCallback((nextSettings) => {
+    setSettings(normaliseSettings(nextSettings));
   }, []);
 
   const chooseBackgroundMode = useCallback((mode) => {
@@ -82,6 +112,15 @@ export default function App() {
   }, []);
 
   const backgroundPreview = resolveBackgroundStyle(settings);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+    } catch {
+      // localStorage unavailable — keep session-only state
+    }
+  }, [settings]);
 
   if (!selectedScript) {
     return (
@@ -387,7 +426,7 @@ export default function App() {
             )}
           </div>
 
-          <ShareUrl settings={settings} />
+          <ShareUrl settings={settings} onLoadSettings={loadSettings} />
 
           <div className={styles.controlsFooter}>
             <button className={styles.resetBtn} onClick={reset}>

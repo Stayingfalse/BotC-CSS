@@ -1,10 +1,12 @@
-import { useState, useMemo, useCallback } from 'react';
-import { buildCSS, buildHash } from '../cssUtils';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { buildCSS, buildHash, parseSettingsInput } from '../cssUtils';
 import styles from './ShareUrl.module.css';
 
-export default function ShareUrl({ settings }) {
+export default function ShareUrl({ settings, onLoadSettings }) {
   const [activeView, setActiveView] = useState('import');
   const [copiedKey, setCopiedKey]   = useState(null);
+  const [loadInput, setLoadInput] = useState('');
+  const [loadStatus, setLoadStatus] = useState(null);
 
   const hash      = useMemo(() => buildHash(settings), [settings]);
   const css       = useMemo(() => buildCSS(settings), [settings]);
@@ -22,6 +24,26 @@ export default function ShareUrl({ settings }) {
       // Clipboard API unavailable (e.g. non-secure context) — do nothing
     }
   }, []);
+
+  const loadSettingsFromInput = useCallback(() => {
+    const parsed = parseSettingsInput(loadInput);
+    if (!parsed) {
+      setLoadStatus({ type: 'error', message: 'Invalid settings format.' });
+      return;
+    }
+    if (!onLoadSettings) {
+      setLoadStatus({ type: 'error', message: 'Load action is unavailable.' });
+      return;
+    }
+    onLoadSettings(parsed);
+    setLoadStatus({ type: 'success', message: 'Settings loaded.' });
+  }, [loadInput, onLoadSettings]);
+
+  useEffect(() => {
+    if (!loadStatus) return undefined;
+    const timeoutId = setTimeout(() => setLoadStatus(null), 3000);
+    return () => clearTimeout(timeoutId);
+  }, [loadStatus]);
 
   return (
     <div className={styles.wrapper}>
@@ -67,6 +89,40 @@ export default function ShareUrl({ settings }) {
               {copiedKey === 'hash' ? '✓' : 'Copy'}
             </button>
           </p>
+
+          <div className={styles.loadRow}>
+            <input
+              type="text"
+              className={styles.loadInput}
+              value={loadInput}
+              placeholder="Paste hash, @import line, or /css URL"
+              onChange={(event) => {
+                setLoadInput(event.target.value);
+                setLoadStatus(null);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  loadSettingsFromInput();
+                }
+              }}
+            />
+            <button
+              type="button"
+              className={styles.loadBtn}
+              onClick={loadSettingsFromInput}
+            >
+              Load settings
+            </button>
+          </div>
+          {loadStatus && (
+            <p
+              className={`${styles.loadStatus} ${
+                loadStatus.type === 'error' ? styles.loadStatusError : styles.loadStatusOk
+              }`}
+            >
+              {loadStatus.message}
+            </p>
+          )}
         </div>
       )}
 

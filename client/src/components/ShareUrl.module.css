@@ -84,6 +84,55 @@
   font-size: 0.72rem;
 }
 
+.loadRow {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.loadInput {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface2);
+  color: var(--color-text);
+}
+
+.loadInput::placeholder {
+  color: var(--color-text-mute);
+}
+
+.loadBtn {
+  flex-shrink: 0;
+  padding: 5px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface2);
+  color: var(--color-text);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.loadBtn:hover {
+  border-color: var(--color-text-mute);
+}
+
+.loadStatus {
+  font-size: 0.72rem;
+  margin-top: -2px;
+}
+
+.loadStatusOk {
+  color: #4caf50;
+}
+
+.loadStatusError {
+  color: #ef5350;
+}
+
 /* ── Copy buttons ── */
 .copyBtn {
   flex-shrink: 0;
