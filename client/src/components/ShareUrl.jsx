@@ -19,15 +19,7 @@ export default function ShareUrl({ settings }) {
       setCopiedKey(key);
       setTimeout(() => setCopiedKey(null), 2000);
     } catch {
-      /* fallback */
-      const el = document.createElement('textarea');
-      el.value = text;
-      document.body.appendChild(el);
-      el.select();
-      document.execCommand('copy');
-      document.body.removeChild(el);
-      setCopiedKey(key);
-      setTimeout(() => setCopiedKey(null), 2000);
+      // Clipboard API unavailable (e.g. non-secure context) — do nothing
     }
   }, []);
 

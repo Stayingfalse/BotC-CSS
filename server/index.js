@@ -50,7 +50,7 @@ app.get('/api/decode/:hash', apiLimiter, (req, res) => {
 });
 
 // GET /api/defaults  — return default settings
-app.get('/api/defaults', (_req, res) => {
+app.get('/api/defaults', apiLimiter, (_req, res) => {
   res.json(DEFAULTS);
 });
 
@@ -59,7 +59,7 @@ const clientDist = path.join(__dirname, '..', 'client', 'dist');
 app.use(express.static(clientDist));
 
 // SPA catch-all — any unmatched route serves index.html
-app.use((_req, res) => {
+app.use(apiLimiter, (_req, res) => {
   res.sendFile(path.join(clientDist, 'index.html'));
 });
 
