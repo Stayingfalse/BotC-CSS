@@ -151,13 +151,15 @@ function decodeHashToSettings(hash) {
   }
 }
 
+const SETTINGS_PATH_REGEX = /\/css\/([A-Za-z0-9_-]+)/;
+
 function extractHashFromUrl(urlText) {
   try {
     const url = new URL(urlText);
-    const pathMatch = url.pathname.match(/\/css\/([A-Za-z0-9_-]+)/);
+    const pathMatch = url.pathname.match(SETTINGS_PATH_REGEX);
     return pathMatch?.[1] ?? null;
   } catch {
-    const fallbackMatch = String(urlText).match(/\/css\/([A-Za-z0-9_-]+)/);
+    const fallbackMatch = String(urlText).match(SETTINGS_PATH_REGEX);
     return fallbackMatch?.[1] ?? null;
   }
 }

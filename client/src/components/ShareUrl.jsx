@@ -27,8 +27,12 @@ export default function ShareUrl({ settings, onLoadSettings }) {
 
   const loadSettingsFromInput = useCallback(() => {
     const parsed = parseSettingsInput(loadInput);
-    if (!parsed || !onLoadSettings) {
-      setLoadStatus({ type: 'error', message: 'Could not read settings from that value.' });
+    if (!parsed) {
+      setLoadStatus({ type: 'error', message: 'Invalid settings format.' });
+      return;
+    }
+    if (!onLoadSettings) {
+      setLoadStatus({ type: 'error', message: 'Load action is unavailable.' });
       return;
     }
     onLoadSettings(parsed);
