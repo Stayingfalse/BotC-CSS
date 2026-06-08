@@ -27,6 +27,28 @@ const BACKGROUND_MODE_OPTIONS = [
   { value: 'preset', label: 'Preset gradient' },
 ];
 
+const MOTION_TYPE_OPTIONS = [
+  { value: 'spin', label: 'Spin' },
+  { value: 'rock', label: 'Rock' },
+  { value: 'hybrid', label: 'Hybrid' },
+  { value: 'random', label: 'Random (mixed)' },
+];
+
+const MOTION_WHEN_OPTIONS = [
+  { value: 'off', label: 'Off' },
+  { value: 'always', label: 'Always' },
+  { value: 'hover', label: 'On hover' },
+  { value: 'not-hover', label: 'When not hovered' },
+];
+
+const MOTION_EASE_OPTIONS = [
+  { value: 'linear', label: 'Linear' },
+  { value: 'ease', label: 'Ease' },
+  { value: 'ease-in', label: 'Ease in' },
+  { value: 'ease-out', label: 'Ease out' },
+  { value: 'ease-in-out', label: 'Ease in/out' },
+];
+
 const SCRIPT_GALLERY = [
   {
     id: 'botc-sidebar',
@@ -421,6 +443,38 @@ export default function App() {
                   step={10}
                   unit="px"
                   onChange={v => update('is', Number(v))}
+                />
+
+                <h2 className={styles.sectionTitle} style={{ marginTop: '1.25rem' }}>Token Motion</h2>
+                <p className={styles.hint}>
+                  Use the preview pane to test hover-triggered motion styles.
+                </p>
+                <SelectControl
+                  label="Motion type"
+                  value={settings.mt}
+                  options={MOTION_TYPE_OPTIONS}
+                  onChange={v => update('mt', v)}
+                />
+                <SelectControl
+                  label="When"
+                  value={settings.mw}
+                  options={MOTION_WHEN_OPTIONS}
+                  onChange={v => update('mw', v)}
+                />
+                <RangeControl
+                  label="Speed"
+                  value={settings.ms}
+                  min={0.2}
+                  max={3}
+                  step={0.1}
+                  unit="x"
+                  onChange={v => update('ms', Number(v))}
+                />
+                <SelectControl
+                  label="Easing"
+                  value={settings.me}
+                  options={MOTION_EASE_OPTIONS}
+                  onChange={v => update('me', v)}
                 />
               </section>
             )}
