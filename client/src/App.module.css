@@ -110,6 +110,46 @@
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
 
+.galleryNotices {
+  margin-top: 1rem;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.galleryNoticeCard {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  padding: 1rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.galleryNoticeCard h3 {
+  color: var(--color-gold);
+  font-size: 1rem;
+}
+
+.galleryNoticeCard p {
+  color: var(--color-text-mute);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.galleryNoticeLink {
+  margin-top: auto;
+  color: var(--color-gold);
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+
+.galleryNoticeLink:hover {
+  text-decoration: underline;
+}
+
 .galleryCard {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
