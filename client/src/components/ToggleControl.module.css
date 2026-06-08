@@ -1,0 +1,63 @@
+.control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.label {
+  font-size: 0.85rem;
+  color: var(--color-text);
+  flex: 1;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  width: 72px;
+  height: 28px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface2);
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition);
+  flex-shrink: 0;
+  padding: 0 4px;
+}
+
+.toggle.on {
+  background: var(--color-gold-dim);
+  border-color: var(--color-gold);
+}
+
+.thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-text-mute);
+  transition: transform var(--transition), background var(--transition);
+  flex-shrink: 0;
+}
+
+.toggle.on .thumb {
+  transform: translateX(42px);
+  background: var(--color-gold);
+}
+
+.text {
+  position: absolute;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--color-text-mute);
+  left: 28px;
+  transition: opacity var(--transition);
+}
+
+.toggle.on .text {
+  left: 8px;
+  color: var(--color-gold);
+}

@@ -1,0 +1,16 @@
+{
+  "name": "botc-css",
+  "version": "1.0.0",
+  "description": "BotC-CSS — customisable CSS host for botc.app",
+  "scripts": {
+    "install:client": "cd client && npm install",
+    "build:client": "cd client && npm run build",
+    "dev": "node server/index.js",
+    "start": "node server/index.js",
+    "setup": "npm install && npm run install:client && npm run build:client"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1"
+  }
+}

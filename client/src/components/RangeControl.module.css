@@ -1,0 +1,36 @@
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.label {
+  font-size: 0.78rem;
+  color: var(--color-text-mute);
+}
+
+.value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-gold);
+  font-family: monospace;
+}
+
+.range {
+  width: 100%;
+  accent-color: var(--color-gold);
+  cursor: pointer;
+}
+
+.bounds {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: var(--color-text-mute);
+}
