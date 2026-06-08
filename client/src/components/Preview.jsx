@@ -40,30 +40,56 @@ const MOCK_JINXES = [
   { pair: 'Librarian ↔ Drunk', text: 'The Librarian may get false information while the Drunk is in play.' },
 ];
 
+const JINX_TOKEN_COLORS = {
+  primary: '#5f6b80',
+  secondary: '#242833',
+};
+
+function escapeXml(text) {
+  return String(text ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&apos;');
+}
+
 function tokenImageDataUri(name, toneA, toneB) {
-  const letters = name
+  const normalizedName = String(name ?? '').trim();
+  const letters = normalizedName
     .split(/\s+/)
+    .filter(Boolean)
     .map(part => part.charAt(0))
     .join('')
     .slice(0, 2)
     .toUpperCase();
 
+  const safeLetters = letters.replace(/[^A-Z0-9]/g, '') || '??';
+  const primary = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(String(toneA ?? '').trim())
+    ? String(toneA).trim()
+    : '#ead6ad';
+  const secondary = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(String(toneB ?? '').trim())
+    ? String(toneB).trim()
+    : '#8b6f47';
+
   const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'>
 <defs>
 <radialGradient id='g' cx='38%' cy='32%' r='68%'>
-<stop offset='0%' stop-color='${toneA}'/>
-<stop offset='100%' stop-color='${toneB}'/>
+<stop offset='0%' stop-color='${primary}'/>
+<stop offset='100%' stop-color='${secondary}'/>
 </radialGradient>
 </defs>
 <circle cx='64' cy='64' r='60' fill='url(#g)' stroke='rgba(255,255,255,0.42)' stroke-width='5'/>
-<text x='64' y='75' text-anchor='middle' font-family='Georgia, serif' font-size='42' font-weight='700' fill='rgba(255,255,255,0.92)'>${letters}</text>
+<text x='64' y='75' text-anchor='middle' font-family='Georgia, serif' font-size='42' font-weight='700' fill='rgba(255,255,255,0.92)'>${escapeXml(safeLetters)}</text>
 </svg>`;
 
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
 function escapeHtml(text) {
-  return text
+  const safeText = String(text ?? '');
+
+  return safeText
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')
@@ -91,7 +117,7 @@ function buildPreviewHtml(css, w) {
   }).join('');
 
   const jinxRows = MOCK_JINXES.map((jinx, index) => {
-    const tokenUrl = tokenImageDataUri(`Jinx ${index + 1}`, '#5f6b80', '#242833');
+    const tokenUrl = tokenImageDataUri('JX', JINX_TOKEN_COLORS.primary, JINX_TOKEN_COLORS.secondary);
     return `<li class="jinx">
       <div class="icon" style="background-image:url('${tokenUrl}');"></div>
       <div class="role">
