@@ -135,7 +135,7 @@ function buildMotionCss({ motionType, motionWhen, motionEase, spinDuration, rock
   if (motionType === 'random') {
     return `${applyWhen(`${rockDuration}s botcTokenRock ${motionEase} infinite`) }
 
-  ${applyWhen(`${spinDuration}s botcTokenSpin linear infinite`, ':nth-child(even)') }`;
+  ${applyWhen(`${spinDuration}s botcTokenSpin ${motionEase} infinite`, ':nth-child(even)') }`;
   }
 
   if (motionType === 'spin') {
