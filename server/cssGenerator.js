@@ -490,7 +490,7 @@ ${heightRules}
 
 @keyframes botcTokenSpin {
   0% { rotate: 0deg; }
-  50% { rotate: 1046deg; }
+  50% { rotate: 1046deg; } /* ~3 full turns, then bounce back to origin */
   100% { rotate: 0deg; }
 }
 
