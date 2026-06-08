@@ -137,8 +137,7 @@ export default function App() {
     if (scriptId === 'botc-sidebar') {
       setSelectedScript(scriptId);
       setActiveTab('colors');
-    }
-    if (scriptId === 'token-motion') {
+    } else if (scriptId === 'token-motion') {
       setSelectedScript('botc-sidebar');
       setActiveTab('effects');
     }
