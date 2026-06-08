@@ -83,6 +83,33 @@ const SCRIPT_GALLERY = [
 ];
 
 const SETTINGS_STORAGE_KEY = 'botc-css-settings';
+const HOME_ROUTE = '/';
+
+function normalisePathname(pathname) {
+  const normalised = `/${String(pathname ?? '').trim().replace(/^\/+/, '').replace(/\/+$/, '')}`;
+  return normalised === '/' ? HOME_ROUTE : normalised;
+}
+
+function resolveRoute(pathname) {
+  const route = normalisePathname(pathname);
+  if (route === '/botc-sidebar') {
+    return { selectedScript: 'botc-sidebar', activeTab: 'colors', pathname: route };
+  }
+  if (route === '/token-motion') {
+    return { selectedScript: 'token-motion', activeTab: 'effects', pathname: route };
+  }
+  return { selectedScript: null, activeTab: 'colors', pathname: HOME_ROUTE };
+}
+
+function resolveScriptRoute(scriptId) {
+  if (scriptId === 'botc-sidebar') {
+    return { selectedScript: 'botc-sidebar', activeTab: 'colors', pathname: '/botc-sidebar' };
+  }
+  if (scriptId === 'token-motion') {
+    return { selectedScript: 'token-motion', activeTab: 'effects', pathname: '/token-motion' };
+  }
+  return { selectedScript: null, activeTab: 'colors', pathname: HOME_ROUTE };
+}
 
 function normaliseSettings(candidate) {
   if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) {
@@ -109,9 +136,12 @@ function readStoredSettings() {
 }
 
 export default function App() {
+  const initialRoute = typeof window === 'undefined'
+    ? resolveRoute(HOME_ROUTE)
+    : resolveRoute(window.location.pathname);
   const [settings, setSettings] = useState(() => readStoredSettings());
-  const [activeTab, setActiveTab] = useState('colors');
-  const [selectedScript, setSelectedScript] = useState(null);
+  const [activeTab, setActiveTab] = useState(initialRoute.activeTab);
+  const [selectedScript, setSelectedScript] = useState(initialRoute.selectedScript);
   const isTokenMotionCustomizer = selectedScript === 'token-motion';
 
   const update = useCallback((key, value) => {
@@ -134,17 +164,32 @@ export default function App() {
     setSettings(prev => ({ ...prev, bm: 'preset', bp: presetId }));
   }, []);
 
-  const openScript = useCallback((scriptId) => {
-    if (scriptId === 'botc-sidebar') {
-      setSelectedScript('botc-sidebar');
-      setActiveTab('colors');
-    } else if (scriptId === 'token-motion') {
-      setSelectedScript('token-motion');
-      setActiveTab('effects');
+  const navigateToScript = useCallback((scriptId, { pushHistory = true } = {}) => {
+    const route = resolveScriptRoute(scriptId);
+    setSelectedScript(route.selectedScript);
+    setActiveTab(route.activeTab);
+
+    if (!pushHistory || typeof window === 'undefined') return;
+    const currentPath = normalisePathname(window.location.pathname);
+    if (currentPath !== route.pathname) {
+      window.history.pushState({}, '', route.pathname);
     }
   }, []);
 
   const backgroundPreview = resolveBackgroundStyle(settings);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const handlePopState = () => {
+      const route = resolveRoute(window.location.pathname);
+      setSelectedScript(route.selectedScript);
+      setActiveTab(route.activeTab);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -188,7 +233,7 @@ export default function App() {
                     type="button"
                     disabled={script.disabled}
                     className={styles.launchBtn}
-                    onClick={() => openScript(script.id)}
+                    onClick={() => navigateToScript(script.id)}
                   >
                     {script.disabled ? 'Soon' : 'Open customizer'}
                   </button>
@@ -246,7 +291,7 @@ export default function App() {
             <button
               type="button"
               className={styles.headerBackBtn}
-              onClick={() => setSelectedScript(null)}
+              onClick={() => navigateToScript(null)}
             >
               ← Script gallery
             </button>
