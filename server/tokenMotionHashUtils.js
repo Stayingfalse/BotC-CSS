@@ -1,27 +1,12 @@
 /**
- * Encode settings object to a URL-safe base64 string.
- * Only non-default values are encoded to keep the hash as short as possible.
+ * Encode / decode settings for the Token Motion tool.
+ * Completely separate from the BotC Sidebar hash schema.
  */
 const DEFAULTS = {
-  bg1: '#f4e8d0',
-  bg2: '#e8dcc8',
-  bg3: '#f4e8d0',
-  bm: 'gradient',
-  bs: '#f4e8d0',
-  bp: 'parchment',
-  bc: '#8b6f47',
-  tc: '#000000',
-  ff: '',
-  fs: 14,
-  tt: true,
-  ls: 0,
-  m: true,
-  io: 50,
-  is: 200,
-  w: 270,
-  pt: 40,
-  pl: 30,
-  bw: 3,
+  mt: 'spin',
+  mw: 'hover',
+  ms: 1,
+  me: 'ease-in-out',
 };
 
 function encodeSettings(settings) {
@@ -33,7 +18,6 @@ function encodeSettings(settings) {
     }
   }
   const json = JSON.stringify(delta);
-  // Base64url encode (URL-safe, no padding)
   return Buffer.from(json).toString('base64url');
 }
 

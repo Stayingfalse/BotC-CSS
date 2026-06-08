@@ -5,6 +5,8 @@ const rateLimit = require('express-rate-limit');
 
 const { generateCSS }            = require('./cssGenerator');
 const { encodeSettings, decodeSettings, DEFAULTS } = require('./hashUtils');
+const { generateTokenMotionCSS } = require('./tokenMotionCssGenerator');
+const { encodeSettings: encodeMotionSettings, decodeSettings: decodeMotionSettings } = require('./tokenMotionHashUtils');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -21,6 +23,16 @@ const apiLimiter = rateLimit({
 
 app.use(cors());
 app.use(express.json());
+
+// ── Token Motion CSS endpoint (for @import) ──────────────────────────────────
+// GET /token-motion-css/:hash  — decode motion hash → generate CSS → return as text/css
+app.get('/token-motion-css/:hash', apiLimiter, (req, res) => {
+  const settings = decodeMotionSettings(req.params.hash);
+  const css = generateTokenMotionCSS(settings);
+  res.setHeader('Content-Type', 'text/css; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.send(css);
+});
 
 // ── CSS endpoint (for @import) ───────────────────────────────────────────────
 // GET /css/:hash  — decode hash → generate CSS → return as text/css
