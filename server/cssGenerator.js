@@ -17,10 +17,6 @@
  *   m    {boolean} Show jagged-edge mask   (default true)
  *   io   {number}  Icon opacity (%)        (default 50)
  *   is   {number}  Icon size (px)          (default 200)
- *   mt   {string}  Motion type: spin | rock | hybrid | random
- *   mw   {string}  Motion trigger: off | always | hover | not-hover
- *   ms   {number}  Motion speed multiplier (0.2..3)
- *   me   {string}  Motion easing
  *   w    {number}  Sidebar width (px)      (default 270)
  *   pt   {number}  Top padding (px)        (default 40)
  *   pl   {number}  Left padding (px)       (default 30)
@@ -43,10 +39,6 @@ const DEFAULTS = {
   m: true,
   io: 50,
   is: 200,
-  mt: 'spin',
-  mw: 'off',
-  ms: 1,
-  me: 'ease-in-out',
   w: 270,
   pt: 40,
   pl: 30,
@@ -92,51 +84,6 @@ function pickOption(value, fallback, allowed) {
   return allowed.includes(normalised) ? normalised : fallback;
 }
 
-function buildMotionCss({ motionType, motionWhen, motionEase, spinDuration, rockDuration, hybridDuration }) {
-  if (motionWhen === 'off') return '';
-
-  const applyWhen = (animationValue, listFilter = '') => {
-    const listSelector = `.team li${listFilter}`;
-    const iconSelector = `${listSelector} .icon`;
-    const nameSelector = `${listSelector} .name`;
-
-    if (motionWhen === 'hover') {
-      return `${listSelector}:hover .icon,
-  ${listSelector}:hover .name {
-    animation: ${animationValue} !important;
-  }`;
-    }
-
-    if (motionWhen === 'not-hover') {
-      return `${listSelector}:not(:hover) .icon,
-  ${listSelector}:not(:hover) .name {
-    animation: ${animationValue} !important;
-  }`;
-    }
-
-    return `${iconSelector},
-  ${nameSelector} {
-    animation: ${animationValue} !important;
-  }`;
-  };
-
-  if (motionType === 'random') {
-    return `${applyWhen(`${spinDuration}s botcTokenSpin ${motionEase} infinite`, ':nth-child(odd)') }
-
-  ${applyWhen(`${rockDuration}s botcTokenRock ${motionEase} infinite`, ':nth-child(even)') }`;
-  }
-
-  if (motionType === 'spin') {
-    return applyWhen(`${spinDuration}s botcTokenSpin ${motionEase} infinite`);
-  }
-
-  if (motionType === 'rock') {
-    return applyWhen(`${rockDuration}s botcTokenRock ${motionEase} infinite`);
-  }
-
-  return applyWhen(`${hybridDuration}s botcTokenHybrid ${motionEase} infinite`);
-}
-
 function resolveBackgroundStyle(settings) {
   const mode = settings.bm ?? DEFAULTS.bm;
 
@@ -171,10 +118,6 @@ function generateCSS(settings) {
     m   = true,
     io  = 50,
     is  = 200,
-    mt  = 'spin',
-    mw  = 'off',
-    ms  = 1,
-    me  = 'ease-in-out',
     w   = 270,
     pt  = 40,
     pl  = 30,
@@ -196,14 +139,6 @@ function generateCSS(settings) {
   const showMask = pickBoolean(m, DEFAULTS.m);
   const iconOpacity = pickNumber(io, DEFAULTS.io, 0, 100) / 100;
   const iconSize = pickNumber(is, DEFAULTS.is, 120, 260);
-  const motionType = pickOption(mt, DEFAULTS.mt, ['spin', 'rock', 'hybrid', 'random']);
-  const motionWhen = pickOption(mw, DEFAULTS.mw, ['off', 'always', 'hover', 'not-hover']);
-  const motionEase = pickOption(me, DEFAULTS.me, ['linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out']);
-  const motionSpeed = pickNumber(ms, DEFAULTS.ms, 0.2, 3);
-  const spinDuration = (30 / motionSpeed).toFixed(2);
-  const rockDuration = (2 / motionSpeed).toFixed(2);
-  const hybridDuration = (18 / motionSpeed).toFixed(2);
-  const motionCss = buildMotionCss({ motionType, motionWhen, motionEase, spinDuration, rockDuration, hybridDuration });
   const sidebarWidth = pickNumber(w, DEFAULTS.w, 200, 400);
   const topPadding = pickNumber(pt, DEFAULTS.pt, 0, 80);
   const leftPadding = pickNumber(pl, DEFAULTS.pl, 0, 60);
@@ -487,31 +422,8 @@ ${heightRules}
     transform: translateY(0);
   }
 }
-
-@keyframes botcTokenSpin {
-  0% { rotate: 0deg; }
-  50% { rotate: 1046deg; } /* ~2.9 full turns, then bounce back to origin */
-  100% { rotate: 0deg; }
-}
-
-@keyframes botcTokenRock {
-  0% { rotate: 0deg; }
-  25% { rotate: 45deg; }
-  75% { rotate: -45deg; }
-  100% { rotate: 0deg; }
-}
-
-@keyframes botcTokenHybrid {
-  0% { rotate: 0deg; }
-  20% { rotate: 210deg; }
-  40% { rotate: 480deg; }
-  65% { rotate: 340deg; }
-  85% { rotate: 560deg; }
-  100% { rotate: 360deg; }
-}
-
-${motionCss}
 `;
+}
 }
 
 module.exports = { generateCSS };
